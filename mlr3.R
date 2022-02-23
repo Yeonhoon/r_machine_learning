@@ -224,3 +224,80 @@ bmr2 <- as_benchmark_result(rr2)
 
 bmr1
 bmr1$combine(bmr2)
+
+
+# Model Optimization ------------------------------------------------------
+
+require(mlr3verse)
+task <- tsk('pima')
+learner <- lrn('classif.rpart') 
+
+#1. Search space: 조정할 hyperparameter 설정
+search_space <- ps(cp = p_dbl(lower=0.001, upper=0.1), # cp: complexity
+                   minsplit = p_int(lower=1, upper=10) # split leaf
+                   )
+search_space
+
+#2. Specify performance evaluation of a trained model
+hout <- rsmp('holdout')
+measure <- msr('classif.ce')
+
+# 3. Setting terminator
+# 1) 특정시간 이후(TerminatorClockTime),
+# 2) 특정반복횟수 이후 (TerminatorEvals),
+# 3) 특정 성능 이후 (TerminatorPerfReached),
+# 4) 특정 반복 중에서 더 나은 성능 찾은 경우 (TerminatorStagnation),
+# 5) 위의 것들 조합 (TerminatorCombo)
+
+require('mlr3tuning')
+
+evals20 <- trm('evals',n_evals=20)
+instance <- TuningInstanceSingleCrit$new(
+  task= task,
+  learner = learner,
+  resampling = hout,
+  measure = measure,
+   search_space = search_space,
+  terminator = evals20
+)
+instance
+
+# 4. Choose Optimazation Algorithm with Tuner Class
+# 1) Grid Search (TunerGridSearch)
+# 2) Random Search (TunerRandomSearch)
+# 3) Generalized Simulated Annealing (TunerGenSA)
+# 4) Non-Linear Optimazation (TunerNLoptr)
+
+tuner <- tnr('grid_search', resolution=5) # 5^2(파라미터 2개) : 25
+
+tuner$optimize(instance)
+
+# result: 최적의 하이퍼파라미터
+instance$result_learner_param_vals
+
+instance$result_y
+as.data.table(instance$archive) # 20개인 이유: terminator
+
+instance$archive$benchmark_result$score(msr('classif.acc'))
+
+# 최적의 파라미터 찾음 => 학습하기
+learner$param_set$values <- instance$result_learner_param_vals
+learner$train(task)
+
+
+# Tuning with multiple performace Measure
+
+measures <- msrs(c('classif.ce','time_train'))
+
+eval20 <- trm('evals',n_evals=20)
+instance <- TuningInstanceMultiCrit$new(
+  task = task,
+  learner = learner,
+  resampling = hout,
+  measures = measures,
+  search_space = search_space,
+  terminator = eval20
+)
+
+tuner$optimize(instance)
+instance$result_y
