@@ -229,10 +229,12 @@ bmr1$combine(bmr2)
 # Model Optimization ------------------------------------------------------
 
 require(mlr3verse)
+require(mlr3tuning)
 task <- tsk('pima')
 learner <- lrn('classif.rpart') 
 
 #1. Search space: 조정할 hyperparameter 설정
+# ps: params set
 search_space <- ps(cp = p_dbl(lower=0.001, upper=0.1), # cp: complexity
                    minsplit = p_int(lower=1, upper=10) # split leaf
                    )
@@ -242,14 +244,13 @@ search_space
 hout <- rsmp('holdout')
 measure <- msr('classif.ce')
 
-# 3. Setting terminator
-# 1) 특정시간 이후(TerminatorClockTime),
-# 2) 특정반복횟수 이후 (TerminatorEvals),
-# 3) 특정 성능 이후 (TerminatorPerfReached),
-# 4) 특정 반복 중에서 더 나은 성능 찾은 경우 (TerminatorStagnation),
-# 5) 위의 것들 조합 (TerminatorCombo)
+# 3. Setting terminator: Determinining criteria of tuning
+#   1) 특정시간 이후(TerminatorClockTime),
+#   2) 특정반복횟수 이후 (TerminatorEvals),
+#   3) 특정 성능 이후 (TerminatorPerfReached),
+#   4) 특정 반복 중에서 더 나은 성능 찾은 경우 (TerminatorStagnation),
+#   5) 위의 것들 조합 (TerminatorCombo)
 
-require('mlr3tuning')
 
 evals20 <- trm('evals',n_evals=20)
 instance <- TuningInstanceSingleCrit$new(
@@ -263,10 +264,10 @@ instance <- TuningInstanceSingleCrit$new(
 instance
 
 # 4. Choose Optimazation Algorithm with Tuner Class
-# 1) Grid Search (TunerGridSearch)
-# 2) Random Search (TunerRandomSearch)
-# 3) Generalized Simulated Annealing (TunerGenSA)
-# 4) Non-Linear Optimazation (TunerNLoptr)
+#   1) Grid Search (TunerGridSearch)
+#   2) Random Search (TunerRandomSearch)
+#   3) Generalized Simulated Annealing (TunerGenSA)
+#   4) Non-Linear Optimazation (TunerNLoptr)
 
 tuner <- tnr('grid_search', resolution=5) # 5^2(파라미터 2개) : 25
 
