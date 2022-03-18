@@ -85,9 +85,7 @@ autoplot(resampling, type='roc') + theme(legend.position = 'bottom')
 
 # benchmarking ------------------------------------------------------------
 
-design <- benchmark_grid(
-  
-)
+design <- benchmark_grid()
 
 # tuning -----------------------------------
 require(mlr3tuning)
@@ -176,7 +174,6 @@ as.data.table(filter)
 
 
 #   2) wrapper
-
 instance = FSelectInstanceSingleCrit$new(
   task = task,
   learner = glrn,
@@ -205,8 +202,6 @@ at = AutoFSelector$new(
   terminator = trm('evals',n_evals=20),
   fselector = fselector
 )
-
-
 
 # compare with whole model
 grid = benchmark_grid(
@@ -241,9 +236,4 @@ plot_train + plot_test
 predict <- glrn$predict(task, row_ids=test_set)
 predict$score(measures = msrs(c('classif.auc','classif.acc',
                                 'classif.recall','classif.prauc')))
-
-
-
-x <- data %>% select(-afib_within_7days)
-
 
